@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "UserPrivate": {
+      "title": "UserPrivate",
+      "description": "Private user account metadata and verification details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "emailVerified": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public roommate discovery profile",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["male", "female", "non_binary", "prefer_not_to_say"] },
+        "occupation": { "type": "string", "maxLength": 100 },
+        "collegeOrCompany": { "type": "string", "maxLength": 150 },
+        "bio": { "type": "string", "maxLength": 1000 },
+        "currentCity": { "type": "string", "maxLength": 100 },
+        "destinationCity": { "type": "string", "maxLength": 100 },
+        "locality": { "type": "string", "maxLength": 100 },
+        "budgetMin": { "type": "number" },
+        "budgetMax": { "type": "number" },
+        "accommodationType": { "type": "string", "maxLength": 50 },
+        "moveInDate": { "type": "string", "maxLength": 50 },
+        "lookingForGender": { "type": "string", "enum": ["any", "male", "female"] },
+        "dietaryPreference": { "type": "string", "enum": ["vegetarian", "non_vegetarian", "eggetarian", "vegan", "no_preference"] },
+        "lifestyle": { "type": "object" },
+        "photos": { "type": "array" },
+        "interests": { "type": "array" },
+        "dealBreakers": { "type": "array" },
+        "isVerified": { "type": "boolean" },
+        "isDemo": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "age", "gender", "destinationCity", "budgetMin", "budgetMax"]
+    },
+    "Swipe": {
+      "title": "Swipe",
+      "description": "Swipe action on another user profile",
+      "type": "object",
+      "properties": {
+        "swiperId": { "type": "string", "maxLength": 128 },
+        "targetUserId": { "type": "string", "maxLength": 128 },
+        "direction": { "type": "string", "enum": ["like", "pass", "superlike"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["swiperId", "targetUserId", "direction"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Mutual match between two roommate seekers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "users": { "type": "array" },
+        "user1Id": { "type": "string", "maxLength": 128 },
+        "user2Id": { "type": "string", "maxLength": 128 },
+        "compatibilityScore": { "type": "number" },
+        "lastMessage": { "type": "string", "maxLength": 1000 },
+        "lastMessageAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "users", "user1Id", "user2Id"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Direct message within a mutual match",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "matchId": { "type": "string", "maxLength": 128 },
+        "senderId": { "type": "string", "maxLength": 128 },
+        "recipientId": { "type": "string", "maxLength": 128 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "read"] }
+      },
+      "required": ["id", "matchId", "senderId", "recipientId", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/private/account": {
+      "schema": { "$ref": "#/entities/UserPrivate" },
+      "description": "Private user information accessible only by the account owner"
+    },
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Public roommate discovery profile"
+    },
+    "/swipes/{swipeId}": {
+      "schema": { "$ref": "#/entities/Swipe" },
+      "description": "User swipe recordings for matching"
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Mutual matches between flatmates"
+    },
+    "/matches/{matchId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Chat messages between matched roommates"
+    }
+  }
+}

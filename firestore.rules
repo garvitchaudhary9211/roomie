@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Private account data (Strict PII isolation)
+    match /users/{userId}/private/account {
+      allow get, write: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+    }
+
+    // Public Roommate Discovery Profiles
+    match /profiles/{userId} {
+      allow get, list: if true;
+      allow create: if isValidId(userId) && isOwner(userId) 
+        && incoming().userId == request.auth.uid
+        && incoming().name is string && incoming().name.size() <= 100
+        && incoming().age is number && incoming().age >= 18;
+      allow update: if isValidId(userId) && isOwner(userId)
+        && incoming().userId == request.auth.uid
+        && incoming().name is string && incoming().name.size() <= 100
+        && incoming().age is number && incoming().age >= 18;
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    // Swipes for matching
+    match /swipes/{swipeId} {
+      allow create: if isSignedIn() 
+        && incoming().swiperId == request.auth.uid
+        && incoming().targetUserId is string
+        && incoming().direction in ['like', 'pass', 'superlike'];
+      allow get: if isSignedIn() && (resource.data.swiperId == request.auth.uid || resource.data.targetUserId == request.auth.uid);
+      allow list: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Mutual Matches
+    match /matches/{matchId} {
+      allow get, list: if isSignedIn() && (request.auth.uid in resource.data.users);
+      allow create: if isSignedIn() && (request.auth.uid in incoming().users);
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.users);
+      allow delete: if isSignedIn() && (request.auth.uid in resource.data.users);
+
+      // Chat Messages Subcollection inside Matches
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() 
+          && (request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users);
+        allow create: if isSignedIn()
+          && incoming().senderId == request.auth.uid
+          && (request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users)
+          && incoming().content is string && incoming().content.size() <= 2000;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

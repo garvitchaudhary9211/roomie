@@ -1,0 +1,6 @@
+{
+  "name": "Roomie — Tinder for Roommates",
+  "description": "Find compatible roommates before committing to shared accommodation. Swipe, match, and chat with lifestyle-aligned flatmates.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
